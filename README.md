@@ -1,6 +1,6 @@
 # 음성 통역 앱
 
-## 미리보기
+## 미리보기 (클릭으로 영상 재생)
 <a href="https://drive.google.com/file/d/1ZMRA0mglXikhYYYY2m_hy8nsZ0pGYa8z/view?usp=drive_link">
   <img src="https://raw.githubusercontent.com/hanguk0726/nemo_public/main/assets/vocal_bridge_demo_thumbnail.jpg" width="400"/>
 </a>
