@@ -1,0 +1,12 @@
+elevenlabs==2.9.2
+fastapi==0.116.1
+fastrtc==0.0.30
+loguru==0.7.3
+numpy==2.2.6
+python-dotenv==1.1.1
+soundfile==0.13.1
+supabase==2.18.1
+supabase_auth==2.12.3
+supabase_functions==0.10.1
+torch==2.8.0
+uvicorn==0.35.0

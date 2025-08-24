@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>FastRTC STT Test</title>
+<style>
+body { font-family: sans-serif; background: #f7f7f7; padding: 20px; }
+h1 { font-size: 24px; }
+label { display: block; margin-top: 10px; }
+#log { white-space: pre-line; background: #fff; padding: 10px; border: 1px solid #ddd; height: 200px; overflow: auto; }
+</style>
+</head>
+<body>
+<h1>WebRTC STT 테스트</h1>
+<button id="btn">Start</button>
+
+<button id="callbtn">setLanguage</button>
+<h2>STT 결과</h2>
+<div id="log"></div>
+
+<script>
+const btn = document.getElementById('btn');
+const logEl = document.getElementById('log');
+const callbtn = document.getElementById('callbtn');
+
+let pc = null;
+let webrtc_id = null;
+let dc = null;
+
+function log(msg) {
+    logEl.textContent += msg + "\n";
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+
+
+async function start() {
+    webrtc_id = Math.random().toString(36).substring(2);
+    pc = new RTCPeerConnection();
+
+    // 서버에서 오는 오디오 트랙 수신
+    pc.ontrack = (event) => {
+        const audio = document.createElement("audio");
+        audio.srcObject = event.streams[0];
+        audio.autoplay = true;
+        audio.controls = true;
+
+        audio.play().catch(err => console.warn("Audio autoplay blocked:", err));
+    };
+
+    // DataChannel 생성
+    dc = pc.createDataChannel("text");
+    dc.onmessage = (event) => {
+        log("[서버] " + event.data);
+    };
+
+    // 마이크 스트림 가져오기
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    await new Promise((resolve) => {
+        if (pc.iceGatheringState === "complete") return resolve();
+        pc.addEventListener("icegatheringstatechange", () => {
+            if (pc.iceGatheringState === "complete") resolve();
+        });
+    });
+
+    const res = await fetch('/webrtc/offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            sdp: pc.localDescription.sdp,
+            type: pc.localDescription.type,
+            webrtc_id
+        })
+    });
+    const answer = await res.json();
+    await pc.setRemoteDescription(answer);
+
+  
+    btn.textContent = "Stop";
+}
+
+let count = 0;
+function setLanguage() {
+    count++
+    const lang = count % 2 === 0 ? "korean" : "english";
+    fetch('/input_hook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webrtc_id, language: lang })
+    });
+}
+
+function stop() {
+    if (pc) pc.close();
+    pc = null;
+    webrtc_id = null;
+    btn.textContent = "Start";
+}
+
+btn.addEventListener('click', () => {
+    if (btn.textContent === "Start") start();
+    else stop();
+});
+
+callbtn.addEventListener('click', setLanguage);
+</script>
+</body>
+</html>
